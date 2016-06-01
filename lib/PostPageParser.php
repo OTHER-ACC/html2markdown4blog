@@ -60,27 +60,29 @@ class PostPageParser {
         $all_divs = $doc->getElementsByTagName('div');
         $i = 0;
         while($div = $all_divs->item($i++)) {
-            $div_class = $div->getAttribute("class");
+            $div_class = explode(' ',$div->getAttribute("class"))[0];
             switch ($div_class) {
                 case 'article_title':
                     $title = trim($div->nodeValue);
                     $title = str_replace(array('\n'), '', $title);
-                    $this->_title = $title;
+                    $this->_title =  trim(preg_replace('/[\r\n]+/', "", str_replace(array('[置顶]', '([rn])[s]+'), '', $title)), ' ');
                     break;
 
                 case 'article_manage':
-                    foreach ($div->childNodes as $_mag_item) {
-                        if ($_mag_item->nodeType == XML_ELEMENT_NODE) {
-                            $_class = $_mag_item->getAttribute('class');
-                            if ($_class == 'link_categories') {
-                                $_anchors = $_mag_item->getElementsByTagName('a');
-                                $_i = 0;
-                                while ($_a = $_anchors->item($_i++)) {
-                                    $this->_categories[] = trim($_a->nodeValue);
+                    foreach ($div->childNodes as $_mag_item_first) {
+                        foreach ($_mag_item_first->childNodes as $_mag_item) {
+                            if ($_mag_item->nodeType == XML_ELEMENT_NODE) {
+                                $_class = $_mag_item->getAttribute('class');
+                                if ($_class == 'link_categories') {
+                                    $_anchors = $_mag_item->getElementsByTagName('a');
+                                    $_i = 0;
+                                    while ($_a = $_anchors->item($_i++)) {
+                                        $this->_categories[] = trim($_a->nodeValue);
+                                    }
+                                } else if ($_class == 'link_postdate') {
+                                    $_date = trim($_mag_item->nodeValue);
+                                    $this->_date = strtotime($_date);
                                 }
-                            } else if ($_class == 'link_postdate') {
-                                $_date = trim($_mag_item->nodeValue);
-                                $this->_date = strtotime($_date);
                             }
                         }
                     }
@@ -148,9 +150,13 @@ class PostPageParser {
 
         $front_matter = preg_replace('#\{\stitle\s\}#', $this->_title, $front_matter);
         $front_matter = preg_replace('#\{\sdate\s\}#', $date, $front_matter);
-        $glue = ($style === strtolower('jekyll')) ? ", " : "\n- ";
-        $front_matter = preg_replace('#\{\scategories\s\}#', join($glue, $this->_categories), $front_matter);
-        $front_matter = preg_replace('#\{\stags\s\}#', join($glue, $this->_tags), $front_matter);
+        $glue = ($style === strtolower('jekyll')) ? ", " : ", ";
+        $front_matter = preg_replace('#\{\scategories\s\}#', "娱乐", $front_matter);
+        if($this->_categories) {
+            $front_matter = preg_replace('#\{\stags\s\}#', '['.join($glue, $this->_categories). ']', $front_matter);
+        } else {
+            $front_matter = preg_replace('#\{\stags\s\}#', '', $front_matter);
+        }
 
         return $front_matter;
     }

@@ -42,7 +42,7 @@ class ArchivePageParser {
         $i = 0;
         while ($div = $all_divs->item($i++)) {
             $div_class = $div->hasAttribute('class') ? $div->getAttribute('class') : '';
-            if (strpos($div_class, 'list_item') === 0) {
+            if (strpos($div_class, 'list_item_new') === 0) {
                 $_anchors = $div->getElementsByTagName('a');
                 $j = 0;
                 while ($target = $_anchors->item($j++)) {
